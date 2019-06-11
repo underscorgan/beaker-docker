@@ -151,9 +151,8 @@ module Beaker
 
 
         # Provisioning - Only provision if:
-        # - provisioning was explicitly requested via options, or
         # - the host's container can't be found via its name or ID
-        if @options[:provision] || container.nil?
+        if container.nil?
           @logger.debug("ended up in provisioning")
           unless host['mount_folders'].nil?
             container_opts['HostConfig'] ||= {}
