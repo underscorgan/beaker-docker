@@ -169,7 +169,7 @@ module Beaker
           end
 
           if host['docker_env']
-            @logger.debug("Gonna add env #{host['docker_env'].join(' ')})"
+            @logger.debug("Gonna add env #{host['docker_env'].join(' ')}")
             container_opts['Env'] = host['docker_env']
           end
 
