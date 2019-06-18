@@ -183,6 +183,9 @@ module Beaker
 
           @logger.debug("Creating container from image #{image_name}")
           container = ::Docker::Container.create(container_opts)
+        elsif host['roles'].include?('master')
+          @logger.debug("using an existing master!")
+          ENV['BEAKER_USE_EXISTING_MASTER'] = true
         end
 
         if container.nil?
