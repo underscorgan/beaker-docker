@@ -185,7 +185,7 @@ module Beaker
           container = ::Docker::Container.create(container_opts)
         else
           @logger.debug("using an existing container!")
-          host['use_existing_container'] = 'true'
+          host['use_existing_container'] = true
         end
 
         if container.nil?
