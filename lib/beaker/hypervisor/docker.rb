@@ -115,38 +115,38 @@ module Beaker
       @hosts.each do |host|
         @logger.notify "provisioning #{host.name}"
 
-
-        image = get_container_image(host)
-
-        if host['tag']
-          image.tag({:repo => host['tag']})
-        end
-
-        if @docker_type == 'swarm'
-          image_name = "#{@registry}/beaker/#{image.id}"
-          ret = ::Docker::Image.search(:term => image_name)
-          if ret.first.nil?
-            @logger.debug("Image does not exist on registry. Pushing.")
-            image.tag({:repo => image_name, :force => true})
-            image.push
-          end
-        else
-          image_name = image.id
-        end
-
-        container_opts = get_container_opts(host, image_name)
-        if host['dockeropts'] || @options[:dockeropts]
-          dockeropts = host['dockeropts'] ? host['dockeropts'] : @options[:dockeropts]
-          dockeropts.each do |k,v|
-            container_opts[k] = v
-          end
-        end
-
         container = find_container(host)
 
         # Provisioning - Only provision if the host's container can't be found
         # via its name or ID
         if container.nil?
+          image = get_container_image(host)
+          host['docker_image_id'] = image.id
+
+          if host['tag']
+            image.tag({:repo => host['tag']})
+          end
+
+          if @docker_type == 'swarm'
+            image_name = "#{@registry}/beaker/#{image.id}"
+            ret = ::Docker::Image.search(:term => image_name)
+            if ret.first.nil?
+              @logger.debug("Image does not exist on registry. Pushing.")
+              image.tag({:repo => image_name, :force => true})
+              image.push
+            end
+          else
+            image_name = image.id
+          end
+
+          container_opts = get_container_opts(host, image_name)
+          if host['dockeropts'] || @options[:dockeropts]
+            dockeropts = host['dockeropts'] ? host['dockeropts'] : @options[:dockeropts]
+            dockeropts.each do |k,v|
+              container_opts[k] = v
+            end
+          end
+
           unless host['mount_folders'].nil?
             container_opts['HostConfig'] ||= {}
             container_opts['HostConfig']['Binds'] = host['mount_folders'].values.map do |mount|
@@ -177,6 +177,7 @@ module Beaker
           container = ::Docker::Container.create(container_opts)
         else
           host['use_existing_container'] = true
+          host['docker_image_id'] = container.info["Image"]
         end
 
         if container.nil?
@@ -228,7 +229,6 @@ module Beaker
 
         @logger.debug("node available as  ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@#{ip} -p #{port}")
         host['docker_container_id'] = container.id
-        host['docker_image_id'] = image.id
         host['vm_ip'] = container.json["NetworkSettings"]["IPAddress"].to_s
 
       end
